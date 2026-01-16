@@ -1,0 +1,358 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice <%= invoice.invoiceNumber %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --brand: <%= (typeof brandColor !== 'undefined' && brandColor) ? brandColor : ((colors && colors.primary) ? colors.primary : '#1d4ed8') %>;
+      --brand-dark: <%= (colors && colors.primaryDark) ? colors.primaryDark : '#1e3a8a' %>;
+      --brand-darker: <%= (colors && colors.primaryDarker) ? colors.primaryDarker : '#1e40af' %>;
+      --text: <%= (colors && colors.text) ? colors.text : '#1e293b' %>;
+      --text-medium: <%= (colors && colors.textMedium) ? colors.textMedium : '#64748b' %>;
+      --border: <%= (colors && colors.border) ? colors.border : '#e2e8f0' %>;
+    }
+
+    body { 
+      font-family: 'Times New Roman', serif;
+      color: var(--text);
+      background: #ffffff;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container { 
+      max-width: 800px; 
+      margin: 0 auto;
+      background: white;
+      border: 2px solid var(--brand-darker);
+      overflow: hidden;
+    }
+
+    .header-section {
+      border-bottom: 2px solid var(--brand-darker);
+      padding: 40px 50px;
+      display: flex;
+      justify-content: space-between;
+      gap: 3rem;
+      align-items: flex-start;
+    }
+
+    .company-header {
+      flex: 1;
+    }
+
+    .header-details {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .header-details .logo {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+    }
+
+    .header-details h1 {
+        flex: 1;
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--brand-darker);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      border-bottom: 1px solid var(--brand-darker);
+      padding-bottom: 8px;
+    }
+
+    .company-details {
+      font-size: 11px;
+      color: var(--text-medium);
+      line-height: 1.8;
+      margin-top: 12px;
+    }
+
+    .invoice-header {
+      text-align: right;
+    }
+
+    .invoice-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--brand-darker);
+      letter-spacing: 1px;
+      border-bottom: 2px solid var(--brand-darker);
+      padding-bottom: 8px;
+    }
+
+    .invoice-num {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text);
+      margin-top: 8px;
+    }
+
+    .content {
+      padding: 40px 50px;
+    }
+
+    .invoice-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+      font-size: 11px;
+    }
+
+    .meta-block {
+      border: 1px solid var(--border);
+      padding: 15px 20px;
+    }
+
+    .meta-block-title {
+      font-weight: bold;
+      color: var(--brand-darker);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .meta-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .meta-label {
+      font-weight: bold;
+      color: var(--text-medium);
+    }
+
+    table {
+      width: 100%;
+      margin: 30px 0;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    thead {
+      background: white;
+      border-top: 2px solid var(--brand-darker);
+      border-bottom: 2px solid var(--brand-darker);
+    }
+
+    thead th {
+      padding: 12px 10px;
+      text-align: left;
+      font-weight: bold;
+      color: var(--text);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    thead th.right { text-align: right; }
+    thead th.center { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid #ddd;
+    }
+
+    tbody tr:last-child {
+      border-bottom: 2px solid var(--brand-darker);
+    }
+
+    tbody td {
+      padding: 12px 10px;
+      color: var(--text);
+    }
+
+    tbody td.right { text-align: right; }
+    tbody td.center { text-align: center; color: var(--text-medium); }
+
+    .summary-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 30px;
+    }
+
+    .summary-box {
+      width: 300px;
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    .sum-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 11px;
+      color: var(--text);
+    }
+
+    .sum-row.subtotal,
+    .sum-row.tax {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+      margin-bottom: 8px;
+    }
+
+    .sum-total {
+      border-top: 2px solid var(--brand-darker);
+      padding-top: 12px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--brand-darker);
+    }
+
+    .notes-section {
+      margin-top: 35px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .notes-title {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--brand-darker);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .notes-content {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+    .footer {
+      border-top: 2px solid var(--brand-darker);
+      margin-top: 40px;
+      padding-top: 20px;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-medium);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-section">
+        <div class="company-header">
+            <div class="header-details">
+                <% if (businessLogo) { %>
+                    <img src="<%= businessLogo %>" alt="Logo" class="logo" />
+                <% } %>
+                <h1><%= invoice.billFrom?.businessName || 'YOUR BUSINESS' %></h1>
+            </div>
+            <div class="company-details">
+            <%= invoice.billFrom?.address || '' %><br/>
+            <%= invoice.billFrom?.email || '' %><br/>
+            <%= invoice.billFrom?.phone || '' %>
+            </div>
+        </div>
+      
+        <div class="invoice-header">
+            <div class="invoice-title">INVOICE</div>
+            <div class="invoice-num">#<%= invoice.invoiceNumber %></div>
+        </div>
+    </div>
+
+    <div class="content">
+      <div class="invoice-meta">
+        <div class="meta-block">
+          <div class="meta-block-title">Bill To</div>
+          <div style="margin-top: 12px;">
+            <div style="font-weight: bold; margin-bottom: 8px;"><%= invoice.billTo?.clientName || '' %></div>
+            <div class="meta-line">
+              <span><%= invoice.billTo?.address || '' %></span>
+            </div>
+            <div class="meta-line">
+              <span><%= invoice.billTo?.email || '' %></span>
+            </div>
+            <div class="meta-line">
+              <span><%= invoice.billTo?.phone || '' %></span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="meta-block">
+          <div class="meta-block-title">Invoice Details</div>
+          <div class="meta-line">
+            <span class="meta-label">Invoice Date:</span>
+            <span><%= new Date(invoice.invoiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-label">Due Date:</span>
+            <span><%= new Date(invoice.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-label">Terms:</span>
+            <span><%= invoice.paymentTerms || 'Net 30' %></span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-label">Status:</span>
+            <span><%= invoice.status %></span>
+          </div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th class="center">Qty</th>
+            <th class="right">Unit Price</th>
+            <th class="right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% (invoice.items || []).forEach(function(item){ %>
+            <tr>
+              <td><%= item.name %></td>
+              <td class="center"><%= item.quantity %></td>
+              <td class="right"><%= currencyIcon %><%= Number(item.unitPrice || 0).toFixed(2) %></td>
+              <td class="right"><%= currencyIcon %><%= Number(item.total || 0).toFixed(2) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <div class="summary-section">
+        <div class="summary-box">
+          <div class="sum-row subtotal">
+            <span>Subtotal</span>
+            <span><%= currencyIcon %><%= Number(invoice.subTotal||0).toFixed(2) %></span>
+          </div>
+          <div class="sum-row tax">
+            <span>Tax</span>
+            <span><%= currencyIcon %><%= Number(invoice.taxTotal||0).toFixed(2) %></span>
+          </div>
+          <div class="sum-row sum-total">
+            <span>Total Due</span>
+            <span><%= currencyIcon %><%= Number(invoice.total||0).toFixed(2) %></span>
+          </div>
+        </div>
+      </div>
+
+      <% if (invoice.notes) { %>
+        <div class="notes-section">
+          <div class="notes-title">Notes</div>
+          <div class="notes-content"><%= invoice.notes %></div>
+        </div>
+      <% } %>
+
+      <div class="footer">Thank you for your business</div>
+    </div>
+  </div>
+</body>
+</html>
