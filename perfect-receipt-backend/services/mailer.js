@@ -48,8 +48,8 @@ async function sendViaBrevoAPI({ to, subject, html, from, replyTo, attachments }
         ? { email: replyTo.email, name: replyTo.name || "" }
         : undefined,
       attachment: attachments?.map((file) => ({
-        url: file.url,           // file must be accessible publicly
-        name: file.filename,     // displayed name
+        name: file.name,
+        content: file.content, // base64 string
       })),
     },
     {
@@ -77,7 +77,10 @@ async function sendMail({ to, subject, html, from, replyTo, attachments }) {
     subject,
     html,
     replyTo,
-    attachments,
+    attachments: attachments.map(file => ({
+      filename: file.name,
+      content: Buffer.from(file.content, 'base64'),
+    }))
   });
 }
 

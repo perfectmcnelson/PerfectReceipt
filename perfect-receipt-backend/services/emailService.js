@@ -60,7 +60,7 @@ const sendInvoiceEmail = async (emailData) => {
 
         // const result = await transporter.sendMail(mailOptions);
 
-        await sendMail({
+        const response = await sendMail({
             to: recipientEmail,
             subject: subject,
             html: `
@@ -80,7 +80,7 @@ const sendInvoiceEmail = async (emailData) => {
         });
         
         console.log(`✅ Invoice email sent to ${recipientEmail}`);
-        return { success: true, messageId: result.messageId };
+        return { success: true, response };
     } catch (error) {
         console.error('❌ Invoice email send error:', error);
         throw error;
@@ -116,7 +116,7 @@ const sendReceiptEmail = async (emailData) => {
 
         // const result = await transporter.sendMail(mailOptions);
 
-        await sendMail({
+        const response = await sendMail({
             to: recipientEmail,
             subject: subject,
             html: `
@@ -126,14 +126,14 @@ const sendReceiptEmail = async (emailData) => {
             `,
             from: {
                 email: process.env.EMAIL_USER,
-                name: userName || 'Perfect Receipt'
+                name: replyTo?.name || 'Perfect Receipt'
             },
             replyTo,
             attachments: attachments
         });
 
         console.log(`✅ Receipt email sent to ${recipientEmail}`);
-        return { success: true, messageId: result.messageId };
+        return { success: true, response };
     } catch (error) {
         console.error('❌ Receipt email send error:', error);
         throw error;
