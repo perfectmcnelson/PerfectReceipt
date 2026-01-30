@@ -219,7 +219,22 @@ exports.sendInvoiceReminder = async (req, res) => {
             recipientEmail: recipientEmail,
             subject: `Payment Reminder - Invoice #${invoice.invoiceNumber}`,
             message: reminderMessage,
-            attachments: attachments,
+            attachments: attachments?.map(att => {
+                if (att.content) {
+                    // Convert your Buffer to Base64 for Brevo
+                    return {
+                        name: att.filename,
+                        content: att.content.toString('base64'),
+                        contentType: att.contentType || 'application/octet-stream'
+                    };
+                }
+
+                // Already a URL attachment
+                return {
+                    name: att.filename,
+                    url: att.url
+                }
+            }),
             userEmail: user.email,
             userName: user.name
         };
