@@ -94,7 +94,7 @@ const sendInvoiceEmail = async (emailData) => {
  */
 const sendReceiptEmail = async (emailData) => {
     try {
-        const { recipientEmail, subject, message, attachments = [], userEmail, userName } = emailData;
+        const { recipientEmail, subject, message, attachments = [], replyTo } = emailData;
 
         if (!recipientEmail || !subject) {
             throw new Error('Missing required fields: recipientEmail, subject');
@@ -128,10 +128,7 @@ const sendReceiptEmail = async (emailData) => {
                 email: process.env.EMAIL_USER,
                 name: userName || 'Perfect Receipt'
             },
-            replyTo: {
-                email: userEmail,
-                name: userName || 'Perfect Receipt'
-            },
+            replyTo,
             attachments: attachments
         });
 

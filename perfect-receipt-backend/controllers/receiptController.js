@@ -129,8 +129,10 @@ exports.sendReceiptEmail = async (req, res) => {
             subject: `Receipt #${receipt.receiptNumber} from ${user.businessName || 'PerfectReceipt'}`,
             message,
             attachments,
-            userEmail: user.email,
-            userName: user.name
+            replyTo: {
+                email: user.email,
+                name: user.name
+            }
         };
 
         const result = await sendReceiptEmail(emailData);
