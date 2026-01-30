@@ -706,10 +706,55 @@ exports.updateUserSubscription = async (req, res) => {
             }
         };
 
-        if (plan) subscription.plan = plan;
-        if (status) subscription.status = status;
+        // if (plan) subscription.plan = plan;
+        // if (status) subscription.status = status;
 
-        await subscription.save();
+        const billingCycle = subscription.billingCycle;
+        const currentDate = new Date();
+        const periodEnd = new Date();
+        periodEnd.setMonth(periodEnd.getMonth() + (billingCycle === "yearly" ? 12 : 1));
+        const getLimitsForPlan = (plan) => {
+            // const limits = {
+            //     free: { invoicesCreated: 100, receiptsGenerated: 100, emailsSent: 100 },
+            //     premium: { invoicesCreated: 1000, receiptsGenerated: 1000, emailsSent: 1000 },
+            //     business: { invoicesCreated: Infinity, receiptsGenerated: Infinity, emailsSent: Infinity }
+            // };
+            const planLimits = {
+                free: {
+                    invoicesPerMonth: -1,
+                    receiptsPerMonth: -1,
+                    emailsPerMonth: 5,
+                    templatesAccess: ["classic", "minimal"],
+                    hasAds: true
+                },
+                premium: {
+                    invoicesPerMonth: -1,
+                    receiptsPerMonth: -1,
+                    emailsPerMonth: 50,
+                    templatesAccess: ["classic", "modern", "minimal", "elegant"],
+                    hasAds: false
+                },
+                business: {
+                    invoicesPerMonth: -1, // unlimited
+                    receiptsPerMonth: -1,
+                    emailsPerMonth: 200,
+                    templatesAccess: ["classic", "modern", "minimal", "elegant", "creative", "corporate"],
+                    hasAds: false
+                }
+            };
+            return planLimits[plan];
+        }
+
+        if (subscription) {
+            if (plan) subscription.plan = plan;
+            if (status) subscription.status = status;
+            subscription.currentPeriodStart = currentDate;
+            subscription.currentPeriodEnd = periodEnd;
+            // subscription.limits = getLimitsForPlan(plan); // Assume this function returns limits based on plan
+            subscription.limits = subscription.canUseFeature()
+            await subscription.save();
+        }
+
 
         changes.after = {
             plan: subscription.plan,
@@ -756,10 +801,20 @@ exports.editSubscription = async (req, res) => {
             before: { plan: subscription.plan, status: subscription.status }
         };
 
-        if (plan) subscription.plan = plan;
-        if (status) subscription.status = status;
+        const billingCycle = subscription.billingCycle;
+        const currentDate = new Date();
+        const periodEnd = new Date();
+        periodEnd.setMonth(periodEnd.getMonth() + (billingCycle === "yearly" ? 12 : 1));
 
-        await subscription.save();
+        if (subscription) {
+            if (plan) subscription.plan = plan;
+            if (status) subscription.status = status;
+            subscription.currentPeriodStart = currentDate;
+            subscription.currentPeriodEnd = periodEnd;
+            // subscription.limits = getLimitsForPlan(plan); // Assume this function returns limits based on plan
+            subscription.limits = subscription.canUseFeature()
+            await subscription.save();
+        }
 
         changes.after = { plan: subscription.plan, status: subscription.status };
 
