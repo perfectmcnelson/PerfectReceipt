@@ -25,12 +25,22 @@ const generateToken = (id) => {
 
 
 // Email transporter
+// const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_PASSWORD
+//     }
+// });
+
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
+        user: process.env.BREVO_SMTP_USER,
+        pass: process.env.BREVO_SMTP_KEY,
+    },
 });
 
 // Test connection
@@ -75,7 +85,7 @@ exports.enable2FA = async (req, res) => {
             secret: secret.base32,
             manualEntryKey: secret.base32
         });
-        
+
     } catch (error) {
         console.error("Enable 2FA error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
