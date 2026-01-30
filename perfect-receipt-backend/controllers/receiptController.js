@@ -12,6 +12,119 @@ const { generatePdfBufferFromReceipt } = require('../utils/pdfGenerator');
  * @route   POST /api/receipts/:id/send-email
  * @access  Private
  */
+// exports.sendReceiptEmail = async (req, res) => {
+//     try {
+//         const { id: receiptId } = req.params;
+//         const { message } = req.body;
+//         const userId = req.user.id;
+//         const user = req.user;
+
+//         // Server-side quota check and increment for receipts
+//         try {
+//             const subscription = await Subscription.findOne({ user: req.user.id });
+//             if (subscription) {
+//                 const now = new Date();
+//                 if (!subscription.currentPeriodEnd || (subscription.currentPeriodEnd && now > subscription.currentPeriodEnd)) {
+//                     subscription.usage = { invoicesCreated: 0, receiptsGenerated: 0, emailsSent: 0 };
+//                     subscription.currentPeriodStart = now;
+//                     const periodEnd = new Date();
+//                     periodEnd.setMonth(periodEnd.getMonth() + (subscription.billingCycle === 'yearly' ? 12 : 1));
+//                     subscription.currentPeriodEnd = periodEnd;
+//                 }
+
+//                 const limit = subscription.limits?.emailsPerMonth ?? -1;
+//                 if (limit !== -1 && subscription.usage.emailsSent >= limit) {
+//                     return res.status(400).json({ message: `Monthly email limit reached (${limit}).` });
+//                 }
+
+//                 // increment now (save after creating email)
+//                 subscription.usage.emailsSent += 1;
+//                 await subscription.save();
+//             }
+//         } catch (err) {
+//             console.warn('Subscription check failed during email generation:', err.message || err);
+//         }
+
+//         // Validate message
+//         if (!message || typeof message !== 'string' || message.trim().length === 0) {
+//             return res.status(400).json({ message: 'Message is required' });
+//         }
+
+//         // Find receipt
+//         const receipt = await Receipt.findById(receiptId).lean();
+//         if (!receipt) {
+//             return res.status(404).json({ message: 'Receipt not found' });
+//         }
+
+//         // Verify ownership
+//         if (receipt.user.toString() !== userId) {
+//             return res.status(403).json({ message: 'Not authorized to send this receipt' });
+//         }
+
+//         // Get client email
+//         const recipientEmail = receipt.billTo?.email;
+//         if (!recipientEmail) {
+//             return res.status(400).json({ message: 'Client email not found in receipt' });
+//         }
+
+//         // ============================================
+//         // GENERATE PDF DYNAMICALLY
+//         // ============================================
+//         let pdfBuffer;
+//         try {
+//             pdfBuffer = await generatePdfBufferFromReceipt(receipt);
+//         } catch (pdfError) {
+//             console.error('PDF generation error:', pdfError);
+//             return res.status(500).json({ 
+//                 message: 'Failed to generate receipt PDF',
+//                 error: pdfError.message 
+//             });
+//         }
+
+//         const attachments = [
+//             {
+//                 name: `Receipt-${receipt.receiptNumber}.pdf`,
+//                 content: pdfBuffer.toString('base64')
+//             }
+//         ];
+
+//         // ============================================
+//         // SEND EMAIL
+//         // ============================================
+//         const emailData = {
+//             recipientEmail,
+//             subject: `Receipt #${receipt.receiptNumber} from ${user.businessName || 'PerfectReceipt'}`,
+//             message,
+//             attachments,
+//             replyTo: {
+//                 email: user.email,
+//                 name: user.name
+//             }
+//         };
+
+//         const result = await sendReceiptEmail(emailData);
+
+//         res.status(200).json({
+//             message: 'Receipt sent successfully',
+//             messageId: result.messageId,
+//             recipientEmail: recipientEmail,
+//             attachmentCount: attachments.length
+//         });
+
+//     } catch (error) {
+//         console.error('Send receipt email error:', error);
+//         res.status(500).json({
+//             message: 'Failed to send receipt email',
+//             error: error.message
+//         });
+//     }
+// };
+
+
+// @desc    Generate receipt from paid invoice
+// @route   POST /api/receipts/generate/:invoiceId
+// @access  Private
+
 exports.sendReceiptEmail = async (req, res) => {
     try {
         const { id: receiptId } = req.params;
@@ -82,44 +195,37 @@ exports.sendReceiptEmail = async (req, res) => {
         }
 
         // ============================================
-        // PREPARE ATTACHMENTS
+        // CRITICAL FIX: Ensure proper base64 encoding
         // ============================================
-        // const attachments = [];
-
-        // 1. Dynamically generated PDF (in Buffer)
-        // attachments.push({
-        //     filename: `Receipt-${receipt.receiptNumber}.pdf`,
-        //     content: pdfBuffer,
-        //     contentType: 'application/pdf'
-        // });
+        let base64Content;
+        try {
+            // Ensure we have a proper Buffer
+            const bufferToEncode = Buffer.isBuffer(pdfBuffer) 
+                ? pdfBuffer 
+                : Buffer.from(pdfBuffer);
+            
+            // Convert to base64 string
+            base64Content = bufferToEncode.toString('base64');
+            
+            // Verify it's a valid base64 string (should not contain commas)
+            if (base64Content.includes(',')) {
+                console.error('Invalid base64 encoding detected - buffer was serialized incorrectly');
+                throw new Error('PDF buffer encoding failed');
+            }
+        } catch (encodingError) {
+            console.error('Base64 encoding error:', encodingError);
+            return res.status(500).json({ 
+                message: 'Failed to encode PDF',
+                error: encodingError.message 
+            });
+        }
 
         const attachments = [
             {
                 name: `Receipt-${receipt.receiptNumber}.pdf`,
-                content: pdfBuffer.toString('base64')
+                content: base64Content
             }
         ];
-
-
-        // // 2. Company Logo (optional - from file system)
-        // const logoPath = path.join(__dirname, '../assets/logo.png');
-        // if (fs.existsSync(logoPath)) {
-        //     attachments.push({
-        //         filename: 'logo.png',
-        //         path: logoPath,
-        //         cid: 'logo@company.com'
-        //     });
-        // }
-
-        // // 3. Terms and Conditions (optional)
-        // const termsPath = path.join(__dirname, '../assets/terms.pdf');
-        // if (fs.existsSync(termsPath)) {
-        //     attachments.push({
-        //         filename: 'Terms-and-Conditions.pdf',
-        //         path: termsPath,
-        //         contentType: 'application/pdf'
-        //     });
-        // }
 
         // ============================================
         // SEND EMAIL
@@ -153,10 +259,6 @@ exports.sendReceiptEmail = async (req, res) => {
     }
 };
 
-
-// @desc    Generate receipt from paid invoice
-// @route   POST /api/receipts/generate/:invoiceId
-// @access  Private
 exports.generateReceipt = async (req, res) => {
     try {
         const { invoiceId } = req.params;

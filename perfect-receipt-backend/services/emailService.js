@@ -38,27 +38,11 @@ const { sendMail } = require('./mailer');
  */
 const sendInvoiceEmail = async (emailData) => {
     try {
-        const { recipientEmail, subject, message, attachments = [], userEmail, userName } = emailData;
+        const { recipientEmail, subject, message, attachments = [], replyTo } = emailData;
 
         if (!recipientEmail || !subject) {
             throw new Error('Missing required fields: recipientEmail, subject');
         }
-
-        // const mailOptions = {
-        //     from: process.env.EMAIL_USER,
-        //     replyTo: userEmail,
-        //     to: recipientEmail,
-        //     subject: subject,
-        //     text: message,
-        //     html: `
-        //         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        //             <p>${message.replace(/\n/g, '</p><p>')}</p>
-        //         </div>
-        //     `,
-        //     attachments: attachments
-        // };
-
-        // const result = await transporter.sendMail(mailOptions);
 
         const response = await sendMail({
             to: recipientEmail,
@@ -73,8 +57,8 @@ const sendInvoiceEmail = async (emailData) => {
                 name: userName || 'Perfect Receipt'
             },
             replyTo: {
-                email: userEmail,
-                name: userName || 'Perfect Receipt'
+                email: replyTo?.email || process.env.EMAIL_USER,
+                name: replyTo?.name || 'Perfect Receipt'
             },
             attachments: attachments
         });
@@ -100,36 +84,20 @@ const sendReceiptEmail = async (emailData) => {
             throw new Error('Missing required fields: recipientEmail, subject');
         }
 
-        // const mailOptions = {
-        //     from: process.env.EMAIL_USER,
-        //     replyTo: userEmail,
-        //     to: recipientEmail,
-        //     subject: subject,
-        //     text: message,
-        //     html: `
-        //         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        //             <p>${message.replace(/\n/g, '</p><p>')}</p>
-        //         </div>
-        //     `,
-        //     attachments: attachments
-        // };
-
-        // const result = await transporter.sendMail(mailOptions);
-
         const response = await sendMail({
             to: recipientEmail,
-            subject: subject,
+            subject,
             html: `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                     <p>${message.replace(/\n/g, '</p><p>')}</p>
                 </div>
             `,
             from: {
-                email: process.env.EMAIL_USER,
+                email: replyTo?.email || process.env.EMAIL_USER,
                 name: replyTo?.name || 'Perfect Receipt'
             },
             replyTo,
-            attachments: attachments
+            attachments,
         });
 
         console.log(`✅ Receipt email sent to ${recipientEmail}`);
