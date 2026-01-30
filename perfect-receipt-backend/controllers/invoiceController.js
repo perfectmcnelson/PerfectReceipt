@@ -109,7 +109,22 @@ exports.sendInvoiceEmail = async (req, res) => {
             recipientEmail: recipientEmail,
             subject: `Invoice #${invoice.invoiceNumber} from ${user.businessName || 'PerfectReceipt'}`,
             message: message,
-            attachments: attachments,
+            attachments: attachments?.map(att => {
+                if (att.content) {
+                    // Convert your Buffer to Base64 for Brevo
+                    return {
+                        name: att.filename,
+                        content: att.content.toString('base64'),
+                        contentType: att.contentType || 'application/octet-stream'
+                    };
+                }
+
+                // Already a URL attachment
+                return {
+                    name: att.filename,
+                    url: att.url
+                }
+            }),
             userEmail: user.email,
             userName: user.name
         };

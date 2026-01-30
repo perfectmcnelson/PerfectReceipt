@@ -13,6 +13,7 @@ const asyncHandler = require('express-async-handler');
 const { v4: uuidv4 } = require('uuid');
 const {cloudinary} = require("../utils/uploadConfig");
 const sharp = require("sharp");
+const { sendMail } = require("../services/mailer");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -33,24 +34,24 @@ const generateToken = (id) => {
 //     }
 // });
 
-const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.BREVO_SMTP_USER,
-        pass: process.env.BREVO_SMTP_KEY,
-    },
-});
+// const transporter = nodemailer.createTransport({
+//     host: "smtp-relay.brevo.com",
+//     port: 587,
+//     secure: false,
+//     auth: {
+//         user: process.env.BREVO_SMTP_LOGIN,
+//         pass: process.env.BREVO_SMTP_KEY,
+//     },
+// });
 
 // Test connection
-transporter.verify((error, success) => {
-    if (error) {
-        console.error('❌ Email service error:', error);
-    } else {
-        console.log('✅ Email service ready');
-    }
-});
+// transporter.verify((error, success) => {
+//     if (error) {
+//         console.error('❌ Email service error:', error);
+//     } else {
+//         console.log('✅ Email service ready');
+//     }
+// });
 
 
 // --------------->> 2FA Controllers
@@ -239,8 +240,22 @@ exports.forgotPassword = async (req, res) => {
         
         // Send email
         const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
+        // const mailOptions = {
+        //     from: process.env.EMAIL_USER,
+        //     to: user.email,
+        //     subject: "Password Reset Request - PerfectReceipt",
+        //     html: `
+        //         <h2>Password Reset Request</h2>
+        //         <p>You requested a password reset. Click the link below to reset your password:</p>
+        //         <a href="${resetUrl}">${resetUrl}</a>
+        //         <p>This link will expire in 1 hour.</p>
+        //         <p>If you didn't request this, please ignore this email.</p>
+        //     `
+        // };
+        
+        // await transporter.sendMail(mailOptions);
+
+        await sendMail({
             to: user.email,
             subject: "Password Reset Request - PerfectReceipt",
             html: `
@@ -249,11 +264,13 @@ exports.forgotPassword = async (req, res) => {
                 <a href="${resetUrl}">${resetUrl}</a>
                 <p>This link will expire in 1 hour.</p>
                 <p>If you didn't request this, please ignore this email.</p>
-            `
-        };
-        
-        await transporter.sendMail(mailOptions);
-        
+            `,
+            from: {
+                email: process.env.EMAIL_USER,
+                name: "Perfect Receipt"
+            }
+        });
+
         res.json({ message: "Password reset email sent" });
         
     } catch (error) {
@@ -510,21 +527,40 @@ exports.googleAuth = async (req, res) => {
 exports.sendVerificationEmail = async (email, code) => {
   try {
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${code}`;
-    
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Verify Your Email Address',
-      html: `
-        <h2>Email Verification</h2>
-        <p>Thank you for signing up! Click the link below to verify your email:</p>
-        <a href="${verificationLink}" style="background: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-          Verify Email
-        </a>
-        <p>Or enter this code: <strong>${code}</strong></p>
-        <p>This link expires in 24 hours.</p>
-      `
+
+    // await transporter.sendMail({
+    //   from: process.env.EMAIL_USER,
+    //   to: email,
+    //   subject: 'Verify Your Email Address',
+    //   html: `
+    //     <h2>Email Verification</h2>
+    //     <p>Thank you for signing up! Click the link below to verify your email:</p>
+    //     <a href="${verificationLink}" style="background: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+    //       Verify Email
+    //     </a>
+    //     <p>Or enter this code: <strong>${code}</strong></p>
+    //     <p>This link expires in 24 hours.</p>
+    //   `
+    // });
+
+    await sendMail({
+        to: email,
+        subject: 'Verify Your Email Address',
+        html: `
+            <h2>Email Verification</h2>
+            <p>Thank you for signing up! Click the link below to verify your email:</p>
+            <a href="${verificationLink}" style="background: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Verify Email
+            </a>
+            <p>Or enter this code: <strong>${code}</strong></p>
+            <p>This link expires in 24 hours.</p>
+          `,
+        from: {
+            email: process.env.EMAIL_USER,
+            name: 'Perfect Receipt'
+        }
     });
+
     return { success: true };
   } catch (error) {
     console.error('Email send error:', error);
