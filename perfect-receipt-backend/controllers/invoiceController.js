@@ -79,54 +79,51 @@ exports.sendInvoiceEmail = async (req, res) => {
                 error: pdfError.message 
             });
         }
-
         // ============================================
-        // PREPARE ATTACHMENTS
+        // CRITICAL FIX: Ensure proper base64 encoding
         // ============================================
-        const attachments = [];
+        let base64Content;
+        try {
+            // Ensure we have a proper Buffer
+            const bufferToEncode = Buffer.isBuffer(pdfBuffer) 
+                ? pdfBuffer 
+                : Buffer.from(pdfBuffer);
+            
+            // Convert to base64 string
+            base64Content = bufferToEncode.toString('base64');
+            
+            // Verify it's a valid base64 string (should not contain commas)
+            if (base64Content.includes(',')) {
+                console.error('Invalid base64 encoding detected - buffer was serialized incorrectly');
+                throw new Error('PDF buffer encoding failed');
+            }
+        } catch (encodingError) {
+            console.error('Base64 encoding error:', encodingError);
+            return res.status(500).json({ 
+                message: 'Failed to encode PDF',
+                error: encodingError.message 
+            });
+        }
 
-        // 1. Dynamically generated PDF (in Buffer)
-        attachments.push({
-            filename: `Invoice-${invoice.invoiceNumber}.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-        });
-
-        // 2. Company Logo (optional - from file system)
-        // const logoPath = path.join(__dirname, '../assets/logo.png');
-        // if (fs.existsSync(logoPath)) {
-        //     attachments.push({
-        //         filename: 'logo.png',
-        //         path: logoPath,
-        //         cid: 'logo@company.com'
-        //     });
-        // }
+        const attachments = [
+            {
+                name: `Invoice-${invoice.invoiceNumber}.pdf`,
+                content: base64Content
+            }
+        ];
 
         // ============================================
         // SEND EMAIL
         // ============================================
         const emailData = {
-            recipientEmail: recipientEmail,
+            recipientEmail,
             subject: `Invoice #${invoice.invoiceNumber} from ${user.businessName || 'PerfectReceipt'}`,
-            message: message,
-            attachments: attachments?.map(att => {
-                if (att.content) {
-                    // Convert your Buffer to Base64 for Brevo
-                    return {
-                        name: att.filename,
-                        content: att.content.toString('base64'),
-                        contentType: att.contentType || 'application/octet-stream'
-                    };
-                }
-
-                // Already a URL attachment
-                return {
-                    name: att.filename,
-                    url: att.url
-                }
-            }),
-            userEmail: user.email,
-            userName: user.name
+            message,
+            attachments,
+            replyTo: {
+                email: user.email,
+                name: user.name
+            }
         };
 
         const result = await sendInvoiceEmail(emailData);
