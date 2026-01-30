@@ -84,14 +84,22 @@ exports.sendReceiptEmail = async (req, res) => {
         // ============================================
         // PREPARE ATTACHMENTS
         // ============================================
-        const attachments = [];
+        // const attachments = [];
 
         // 1. Dynamically generated PDF (in Buffer)
-        attachments.push({
-            filename: `Receipt-${receipt.receiptNumber}.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-        });
+        // attachments.push({
+        //     filename: `Receipt-${receipt.receiptNumber}.pdf`,
+        //     content: pdfBuffer,
+        //     contentType: 'application/pdf'
+        // });
+
+        const attachments = [
+            {
+                name: `Receipt-${receipt.receiptNumber}.pdf`,
+                content: pdfBuffer.toString('base64')
+            }
+        ];
+
 
         // // 2. Company Logo (optional - from file system)
         // const logoPath = path.join(__dirname, '../assets/logo.png');
@@ -117,25 +125,10 @@ exports.sendReceiptEmail = async (req, res) => {
         // SEND EMAIL
         // ============================================
         const emailData = {
-            recipientEmail: recipientEmail,
+            recipientEmail,
             subject: `Receipt #${receipt.receiptNumber} from ${user.businessName || 'PerfectReceipt'}`,
-            message: message,
-            attachments: attachments?.map(att => {
-                if (att.content) {
-                    // Convert your Buffer to Base64 for Brevo
-                    return {
-                        name: att.filename,
-                        content: att.content.toString('base64'),
-                        contentType: att.contentType || 'application/octet-stream'
-                    };
-                }
-
-                // Already a URL attachment
-                return {
-                    name: att.filename,
-                    url: att.url
-                }
-            }),
+            message,
+            attachments,
             userEmail: user.email,
             userName: user.name
         };
