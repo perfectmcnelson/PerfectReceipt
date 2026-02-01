@@ -1,9 +1,27 @@
 import { CheckCircle, X } from "lucide-react"
 import { useState } from "react";
+import {useNavigate} from "react-router-dom"
 
-const Pricing = () => {
+const Pricing = ({isAuthenticated}) => {
 
     const [selectedCycle, setSelectedCycle] = useState('monthly');
+    // const redirectUser = () => {
+    //     if (!isAuthenticated) {
+    //         return <Navigate to="/signup" replace />;
+    //     } else {
+    //         return <Navigate to="/dashboard" replace />;
+    //     }
+    // }
+
+    const navigate = useNavigate();
+
+    const redirectUser = () => {
+        if (isAuthenticated) {
+            navigate('/upgrade-plan');
+        } else {
+            navigate('/signup');
+        }
+    }
 
     const plans = [
         {
@@ -136,7 +154,7 @@ const Pricing = () => {
                                 ))}
                             </ul>
 
-                            <button className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 cursor-pointer ${plan.popular ? 'bg-linear-to-r from-orange-600 to-orange-700 text-white hover:shadow-xl' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}>
+                            <button onClick={redirectUser} className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 cursor-pointer ${plan.popular ? 'bg-linear-to-r from-orange-600 to-orange-700 text-white hover:shadow-xl' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}>
                                 {plan.cta}
                             </button>
                         </div>

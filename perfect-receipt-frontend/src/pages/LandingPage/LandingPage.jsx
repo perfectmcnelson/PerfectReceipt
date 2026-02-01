@@ -24,7 +24,7 @@ const LandingPage = () => {
             <HowItWorks />
             <Benefits />
             <UseCases />
-            <Pricing />
+            <Pricing isAuthenticated={isAuthenticated} />
             <CTASection isAuthenticated={isAuthenticated} />
             <Testimonials />
             <Faqs />

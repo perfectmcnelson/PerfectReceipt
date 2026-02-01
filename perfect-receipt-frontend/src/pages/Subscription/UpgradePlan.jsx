@@ -259,7 +259,7 @@ const UpgradePlan = () => {
                             const remaining = isUnlimited ? Infinity : Math.max(0, s.limit - s.used);
                             const percent = isUnlimited ? 100 : Math.min(100, Math.round((s.used / Math.max(1, s.limit)) * 100));
 
-                            // color: warning if >80%
+                            // color: warning if >=75%
                             const barColor = isUnlimited ? 'bg-green-400' : percent >= 90 ? 'bg-red-500' : percent >= 75 ? 'bg-yellow-400' : 'bg-green-400';
 
                             return (
@@ -404,7 +404,7 @@ const UpgradePlan = () => {
                                         {currentSubscription?.plan === 'free' ? 'Upgrade' : 'Switch to ' + plan.name}
                                     </Button>
                                     <a href={generateWaLink(plan.name.toLowerCase(), user)} target='_blank' rel='noopener noreferrer' className="mt-2 block font-medium text-center text-sm text-white bg-green-600 hover:bg-green-900 px-4 py-2 h-10 border border-green-600">
-                                        {currentSubscription?.plan === 'free' ? 'Upgrade' : 'Switch to ' + plan.name + ' via WhatsApp'}
+                                        {currentSubscription?.plan === 'free' ? 'Upgrade via WhatsApp' : 'Switch to ' + plan.name + ' via WhatsApp'}
                                     </a>
                                 </div>
                             )}
