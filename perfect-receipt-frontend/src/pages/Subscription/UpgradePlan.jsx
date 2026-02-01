@@ -145,7 +145,7 @@ const UpgradePlan = () => {
                 { text: 'Unlimited receipts', included: true },
                 { text: '50 emails per month', included: true },
                 { text: '4 template styles', included: true },
-                { text: 'No ads', included: true },
+                { text: 'No ads', included: false },
                 { text: 'Email support', included: true },
                 { text: 'Priority support', included: false },
                 { text: 'Custom branding', included: true }
